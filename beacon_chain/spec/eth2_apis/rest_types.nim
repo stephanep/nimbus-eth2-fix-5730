@@ -249,9 +249,10 @@ type
     connected*: uint64
     disconnecting*: uint64
 
-  RestChainHead* = object
+  RestChainHeadV2* = object
     root*: Eth2Digest
     slot*: Slot
+    execution_optmistic*: bool
 
   RestMetadata* = object
     seq_number*: string
@@ -512,7 +513,7 @@ type
   GetBlockHeaderResponse* = DataOptimisticObject[RestBlockHeaderInfo]
   GetBlockHeadersResponse* = DataEnclosedObject[seq[RestBlockHeaderInfo]]
   GetBlockRootResponse* = DataOptimisticObject[RestRoot]
-  GetDebugChainHeadsResponse* = DataEnclosedObject[seq[RestChainHead]]
+  GetDebugChainHeadsV2Response* = DataEnclosedObject[seq[RestChainHeadV2]]
   GetDepositContractResponse* = DataEnclosedObject[RestDepositContract]
   GetDepositSnapshotResponse* = DataEnclosedObject[RestDepositSnapshot]
   GetEpochCommitteesResponse* = DataEnclosedObject[seq[RestBeaconStatesCommittees]]
