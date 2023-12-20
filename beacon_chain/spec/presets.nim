@@ -10,7 +10,9 @@
 import
   std/[strutils, parseutils, tables, typetraits],
   chronos/timer,
-  stew/[byteutils], stint, web3/primitives as web3types,
+  stew/[byteutils],
+  stint,
+  web3/primitives as web3types,
   ./datatypes/constants
 
 export constants
@@ -43,7 +45,8 @@ type
     # Transition
     TERMINAL_TOTAL_DIFFICULTY*: UInt256
     TERMINAL_BLOCK_HASH*: BlockHash
-    TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH*: Epoch  # Not actively used, but part of the spec
+    TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH*: Epoch
+      # Not actively used, but part of the spec
 
     # Genesis
     MIN_GENESIS_ACTIVE_VALIDATOR_COUNT*: uint64
@@ -122,9 +125,11 @@ const
 
   # No-longer used values from legacy config files
   ignoredValues = [
-    "TRANSITION_TOTAL_DIFFICULTY", # Name that appears in some altair alphas, obsolete, remove when no more testnets
-    "MIN_ANCHOR_POW_BLOCK_DIFFICULTY", # Name that appears in some altair alphas, obsolete, remove when no more testnets
-    "RANDOM_SUBNETS_PER_VALIDATOR",    # Removed in consensus-specs v1.4.0
+    "TRANSITION_TOTAL_DIFFICULTY",
+      # Name that appears in some altair alphas, obsolete, remove when no more testnets
+    "MIN_ANCHOR_POW_BLOCK_DIFFICULTY",
+      # Name that appears in some altair alphas, obsolete, remove when no more testnets
+    "RANDOM_SUBNETS_PER_VALIDATOR" # Removed in consensus-specs v1.4.0
   ]
 
 when const_preset == "mainnet":
@@ -140,137 +145,140 @@ when const_preset == "mainnet":
   # It mostly matches the mainnet config with the exception of few properties
   # such as `CONFIG_NAME`, `TERMINAL_TOTAL_DIFFICULTY`, `*_FORK_EPOCH`, etc
   # which must be effectively overriden in all network (including mainnet).
-  const defaultRuntimeConfig* = RuntimeConfig(
-    # Mainnet config
+  const
+    defaultRuntimeConfig* =
+      RuntimeConfig(
+        # Mainnet config
 
-    # Extends the mainnet preset
-    PRESET_BASE: "mainnet",
+        # Extends the mainnet preset
+        PRESET_BASE: "mainnet",
 
-    # Free-form short name of the network that this configuration applies to - known
-    # canonical network names include:
-    # * 'mainnet' - there can be only one
-    # * 'prater' - testnet
-    # * 'ropsten' - testnet
-    # * 'sepolia' - testnet
-    # * 'holesky' - testnet
-    # Must match the regex: [a-z0-9\-]
-    CONFIG_NAME: "",
+        # Free-form short name of the network that this configuration applies to - known
+        # canonical network names include:
+        # * 'mainnet' - there can be only one
+        # * 'prater' - testnet
+        # * 'ropsten' - testnet
+        # * 'sepolia' - testnet
+        # * 'holesky' - testnet
+        # Must match the regex: [a-z0-9\-]
+        CONFIG_NAME: "",
 
-    # Transition
-    # ---------------------------------------------------------------
-    # TBD, 2**256-2**10 is a placeholder
-    TERMINAL_TOTAL_DIFFICULTY:
-      u256"115792089237316195423570985008687907853269984665640564039457584007913129638912",
-    # By default, don't use these params
-    TERMINAL_BLOCK_HASH: BlockHash.fromHex(
-      "0x0000000000000000000000000000000000000000000000000000000000000000"),
+        # Transition
+        # ---------------------------------------------------------------
+        # TBD, 2**256-2**10 is a placeholder
+        TERMINAL_TOTAL_DIFFICULTY:
+          u256"115792089237316195423570985008687907853269984665640564039457584007913129638912",
+        # By default, don't use these params
+        TERMINAL_BLOCK_HASH:
+          BlockHash.fromHex(
+            "0x0000000000000000000000000000000000000000000000000000000000000000"
+          ),
 
-    # Genesis
-    # ---------------------------------------------------------------
-    # `2**14` (= 16,384)
-    MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 16384,
-    # Dec 1, 2020, 12pm UTC
-    MIN_GENESIS_TIME: 1606824000,
-    # Mainnet initial fork version, recommend altering for testnets
-    GENESIS_FORK_VERSION: Version [byte 0x00, 0x00, 0x00, 0x00],
-    # 604800 seconds (7 days)
-    GENESIS_DELAY: 604800,
+        # Genesis
+        # ---------------------------------------------------------------
+        # `2**14` (= 16,384)
+        MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 16384,
+        # Dec 1, 2020, 12pm UTC
+        MIN_GENESIS_TIME: 1606824000,
+        # Mainnet initial fork version, recommend altering for testnets
+        GENESIS_FORK_VERSION: Version [byte 0x00, 0x00, 0x00, 0x00],
+        # 604800 seconds (7 days)
+        GENESIS_DELAY: 604800,
 
-    # Forking
-    # ---------------------------------------------------------------
-    # Some forks are disabled for now:
-    #  - These may be re-assigned to another fork-version later
-    #  - Temporarily set to max uint64 value: 2**64 - 1
+        # Forking
+        # ---------------------------------------------------------------
+        # Some forks are disabled for now:
+        #  - These may be re-assigned to another fork-version later
+        #  - Temporarily set to max uint64 value: 2**64 - 1
 
-    # Altair
-    ALTAIR_FORK_VERSION: Version [byte 0x01, 0x00, 0x00, 0x00],
-    ALTAIR_FORK_EPOCH: FAR_FUTURE_EPOCH,
-    # Bellatrix
-    BELLATRIX_FORK_VERSION: Version [byte 0x02, 0x00, 0x00, 0x00],
-    BELLATRIX_FORK_EPOCH: FAR_FUTURE_EPOCH,
-    # Capella
-    CAPELLA_FORK_VERSION: Version [byte 0x03, 0x00, 0x00, 0x00],
-    CAPELLA_FORK_EPOCH: FAR_FUTURE_EPOCH,
-    # Deneb
-    DENEB_FORK_VERSION: Version [byte 0x04, 0x00, 0x00, 0x00],
-    DENEB_FORK_EPOCH: FAR_FUTURE_EPOCH,
+        # Altair
+        ALTAIR_FORK_VERSION: Version [byte 0x01, 0x00, 0x00, 0x00],
+        ALTAIR_FORK_EPOCH: FAR_FUTURE_EPOCH,
+        # Bellatrix
+        BELLATRIX_FORK_VERSION: Version [byte 0x02, 0x00, 0x00, 0x00],
+        BELLATRIX_FORK_EPOCH: FAR_FUTURE_EPOCH,
+        # Capella
+        CAPELLA_FORK_VERSION: Version [byte 0x03, 0x00, 0x00, 0x00],
+        CAPELLA_FORK_EPOCH: FAR_FUTURE_EPOCH,
+        # Deneb
+        DENEB_FORK_VERSION: Version [byte 0x04, 0x00, 0x00, 0x00],
+        DENEB_FORK_EPOCH: FAR_FUTURE_EPOCH,
 
-    # Time parameters
-    # ---------------------------------------------------------------
-    # 12 seconds
-    # TODO SECONDS_PER_SLOT: 12,
-    # 14 (estimate from Eth1 mainnet)
-    SECONDS_PER_ETH1_BLOCK: 14,
-    # 2**8 (= 256) epochs ~27 hours
-    MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256,
-    # 2**8 (= 256) epochs ~27 hours
-    SHARD_COMMITTEE_PERIOD: 256,
-    # 2**11 (= 2,048) Eth1 blocks ~8 hours
-    ETH1_FOLLOW_DISTANCE: 2048,
+        # Time parameters
+        # ---------------------------------------------------------------
+        # 12 seconds
+        # TODO SECONDS_PER_SLOT: 12,
+        # 14 (estimate from Eth1 mainnet)
+        SECONDS_PER_ETH1_BLOCK: 14,
+        # 2**8 (= 256) epochs ~27 hours
+        MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256,
+        # 2**8 (= 256) epochs ~27 hours
+        SHARD_COMMITTEE_PERIOD: 256,
+        # 2**11 (= 2,048) Eth1 blocks ~8 hours
+        ETH1_FOLLOW_DISTANCE: 2048,
 
+        # Validator cycle
+        # ---------------------------------------------------------------
+        # 2**2 (= 4)
+        INACTIVITY_SCORE_BIAS: 4,
+        # 2**4 (= 16)
+        INACTIVITY_SCORE_RECOVERY_RATE: 16,
+        # 2**4 * 10**9 (= 16,000,000,000) Gwei
+        EJECTION_BALANCE: 16000000000'u64,
+        # 2**2 (= 4)
+        MIN_PER_EPOCH_CHURN_LIMIT: 4,
+        # 2**16 (= 65,536)
+        CHURN_LIMIT_QUOTIENT: 65536,
+        # [New in Deneb:EIP7514] 2**3 (= 8)
+        MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT: 8,
 
-    # Validator cycle
-    # ---------------------------------------------------------------
-    # 2**2 (= 4)
-    INACTIVITY_SCORE_BIAS: 4,
-    # 2**4 (= 16)
-    INACTIVITY_SCORE_RECOVERY_RATE: 16,
-    # 2**4 * 10**9 (= 16,000,000,000) Gwei
-    EJECTION_BALANCE: 16000000000'u64,
-    # 2**2 (= 4)
-    MIN_PER_EPOCH_CHURN_LIMIT: 4,
-    # 2**16 (= 65,536)
-    CHURN_LIMIT_QUOTIENT: 65536,
-    # [New in Deneb:EIP7514] 2**3 (= 8)
-    MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT: 8,
+        # Deposit contract
+        # ---------------------------------------------------------------
+        # Ethereum PoW Mainnet
+        DEPOSIT_CHAIN_ID: 1,
+        DEPOSIT_NETWORK_ID: 1,
+        DEPOSIT_CONTRACT_ADDRESS: default(Eth1Address),
 
-    # Deposit contract
-    # ---------------------------------------------------------------
-    # Ethereum PoW Mainnet
-    DEPOSIT_CHAIN_ID: 1,
-    DEPOSIT_NETWORK_ID: 1,
-    DEPOSIT_CONTRACT_ADDRESS: default(Eth1Address),
+        # Networking
+        # ---------------------------------------------------------------
+        # `10 * 2**20` (= 10485760, 10 MiB)
+        # TODO GOSSIP_MAX_SIZE: 10485760,
+        # `2**10` (= 1024)
+        # TODO MAX_REQUEST_BLOCKS: 1024,
+        # `2**8` (= 256)
+        # TODO EPOCHS_PER_SUBNET_SUBSCRIPTION: 256,
+        # `MIN_VALIDATOR_WITHDRAWABILITY_DELAY + CHURN_LIMIT_QUOTIENT // 2` (= 33024, ~5 months)
+        MIN_EPOCHS_FOR_BLOCK_REQUESTS: 33024,
+        # `10 * 2**20` (=10485760, 10 MiB)
+        # TODO MAX_CHUNK_SIZE: 10485760,
+        # 5s
+        # TODO TTFB_TIMEOUT: 5,
+        # 10s
+        # TODO RESP_TIMEOUT: 10,
+        # TODO ATTESTATION_PROPAGATION_SLOT_RANGE: 32,
+        # 500ms
+        # TODO MAXIMUM_GOSSIP_CLOCK_DISPARITY: 500,
+        # TODO MESSAGE_DOMAIN_INVALID_SNAPPY: [byte 0x00, 0x00, 0x00, 0x00],
+        # TODO MESSAGE_DOMAIN_VALID_SNAPPY: [byte 0x01, 0x00, 0x00, 0x00],
+        # 2 subnets per node
+        # TODO SUBNETS_PER_NODE: 2,
+        # 2**8 (= 64)
+        # TODO ATTESTATION_SUBNET_COUNT: 64,
+        # TODO ATTESTATION_SUBNET_EXTRA_BITS: 0,
+        # ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
+        # TODO ATTESTATION_SUBNET_PREFIX_BITS: 6,
 
-    # Networking
-    # ---------------------------------------------------------------
-    # `10 * 2**20` (= 10485760, 10 MiB)
-    # TODO GOSSIP_MAX_SIZE: 10485760,
-    # `2**10` (= 1024)
-    # TODO MAX_REQUEST_BLOCKS: 1024,
-    # `2**8` (= 256)
-    # TODO EPOCHS_PER_SUBNET_SUBSCRIPTION: 256,
-    # `MIN_VALIDATOR_WITHDRAWABILITY_DELAY + CHURN_LIMIT_QUOTIENT // 2` (= 33024, ~5 months)
-    MIN_EPOCHS_FOR_BLOCK_REQUESTS: 33024,
-    # `10 * 2**20` (=10485760, 10 MiB)
-    # TODO MAX_CHUNK_SIZE: 10485760,
-    # 5s
-    # TODO TTFB_TIMEOUT: 5,
-    # 10s
-    # TODO RESP_TIMEOUT: 10,
-    # TODO ATTESTATION_PROPAGATION_SLOT_RANGE: 32,
-    # 500ms
-    # TODO MAXIMUM_GOSSIP_CLOCK_DISPARITY: 500,
-    # TODO MESSAGE_DOMAIN_INVALID_SNAPPY: [byte 0x00, 0x00, 0x00, 0x00],
-    # TODO MESSAGE_DOMAIN_VALID_SNAPPY: [byte 0x01, 0x00, 0x00, 0x00],
-    # 2 subnets per node
-    # TODO SUBNETS_PER_NODE: 2,
-    # 2**8 (= 64)
-    # TODO ATTESTATION_SUBNET_COUNT: 64,
-    # TODO ATTESTATION_SUBNET_EXTRA_BITS: 0,
-    # ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
-    # TODO ATTESTATION_SUBNET_PREFIX_BITS: 6,
-
-    # Deneb
-    # `2**7` (=128)
-    # TODO MAX_REQUEST_BLOCKS_DENEB: 128,
-    # MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK
-    # TODO MAX_REQUEST_BLOB_SIDECARS: 768,
-    # `2**12` (= 4096 epochs, ~18 days)
-    MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS: 4096,
-    # `6`
-    # TODO BLOB_SIDECAR_SUBNET_COUNT: 6,
-  )
-
+        # Deneb
+        # `2**7` (=128)
+        # TODO MAX_REQUEST_BLOCKS_DENEB: 128,
+        # MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK
+        # TODO MAX_REQUEST_BLOB_SIDECARS: 768,
+        # `2**12` (= 4096 epochs, ~18 days)
+        MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS: 4096
+          # `6`
+          # TODO BLOB_SIDECAR_SUBNET_COUNT: 6,
+        ,
+      )
 elif const_preset == "gnosis":
   import ./presets/gnosis
   export gnosis
@@ -284,138 +292,140 @@ elif const_preset == "gnosis":
   # It mostly matches the gnosis config with the exception of few properties
   # such as `CONFIG_NAME`, `TERMINAL_TOTAL_DIFFICULTY`, `*_FORK_EPOCH`, etc
   # which must be effectively overriden in all network (including mainnet).
-  const defaultRuntimeConfig* = RuntimeConfig(
-    # Mainnet config
+  const
+    defaultRuntimeConfig* =
+      RuntimeConfig(
+        # Mainnet config
 
-    # Extends the mainnet preset
-    PRESET_BASE: "gnosis",
+        # Extends the mainnet preset
+        PRESET_BASE: "gnosis",
 
-    # Free-form short name of the network that this configuration applies to - known
-    # canonical network names include:
-    # * 'mainnet' - there can be only one
-    # * 'prater' - testnet
-    # * 'ropsten' - testnet
-    # * 'sepolia' - testnet
-    # * 'holesky' - testnet
-    # Must match the regex: [a-z0-9\-]
-    CONFIG_NAME: "",
+        # Free-form short name of the network that this configuration applies to - known
+        # canonical network names include:
+        # * 'mainnet' - there can be only one
+        # * 'prater' - testnet
+        # * 'ropsten' - testnet
+        # * 'sepolia' - testnet
+        # * 'holesky' - testnet
+        # Must match the regex: [a-z0-9\-]
+        CONFIG_NAME: "",
 
-    # Transition
-    # ---------------------------------------------------------------
-    # TBD, 2**256-2**10 is a placeholder
-    TERMINAL_TOTAL_DIFFICULTY:
-      u256"115792089237316195423570985008687907853269984665640564039457584007913129638912",
-    # By default, don't use these params
-    TERMINAL_BLOCK_HASH: BlockHash.fromHex(
-      "0x0000000000000000000000000000000000000000000000000000000000000000"),
+        # Transition
+        # ---------------------------------------------------------------
+        # TBD, 2**256-2**10 is a placeholder
+        TERMINAL_TOTAL_DIFFICULTY:
+          u256"115792089237316195423570985008687907853269984665640564039457584007913129638912",
+        # By default, don't use these params
+        TERMINAL_BLOCK_HASH:
+          BlockHash.fromHex(
+            "0x0000000000000000000000000000000000000000000000000000000000000000"
+          ),
 
-    # Genesis
-    # ---------------------------------------------------------------
-    # `2**14` (= 16,384)
-    MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 4096,
-    # Dec 1, 2020, 12pm UTC
-    MIN_GENESIS_TIME: 1638968400,
-    # Mainnet initial fork version, recommend altering for testnets
-    GENESIS_FORK_VERSION: Version [byte 0x00, 0x00, 0x00, 0x64],
-    # 604800 seconds (7 days)
-    GENESIS_DELAY: 604800,
+        # Genesis
+        # ---------------------------------------------------------------
+        # `2**14` (= 16,384)
+        MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 4096,
+        # Dec 1, 2020, 12pm UTC
+        MIN_GENESIS_TIME: 1638968400,
+        # Mainnet initial fork version, recommend altering for testnets
+        GENESIS_FORK_VERSION: Version [byte 0x00, 0x00, 0x00, 0x64],
+        # 604800 seconds (7 days)
+        GENESIS_DELAY: 604800,
 
-    # Forking
-    # ---------------------------------------------------------------
-    # Some forks are disabled for now:
-    #  - These may be re-assigned to another fork-version later
-    #  - Temporarily set to max uint64 value: 2**64 - 1
+        # Forking
+        # ---------------------------------------------------------------
+        # Some forks are disabled for now:
+        #  - These may be re-assigned to another fork-version later
+        #  - Temporarily set to max uint64 value: 2**64 - 1
 
-    # Altair
-    ALTAIR_FORK_VERSION: Version [byte 0x01, 0x00, 0x00, 0x64],
-    ALTAIR_FORK_EPOCH: FAR_FUTURE_EPOCH,
-    # Bellatrix
-    BELLATRIX_FORK_VERSION: Version [byte 0x02, 0x00, 0x00, 0x64],
-    BELLATRIX_FORK_EPOCH: FAR_FUTURE_EPOCH,
-    # Capella
-    CAPELLA_FORK_VERSION: Version [byte 0x03, 0x00, 0x00, 0x64],
-    CAPELLA_FORK_EPOCH: FAR_FUTURE_EPOCH,
-    # Deneb
-    DENEB_FORK_VERSION: Version [byte 0x04, 0x00, 0x00, 0x64],
-    DENEB_FORK_EPOCH: FAR_FUTURE_EPOCH,
+        # Altair
+        ALTAIR_FORK_VERSION: Version [byte 0x01, 0x00, 0x00, 0x64],
+        ALTAIR_FORK_EPOCH: FAR_FUTURE_EPOCH,
+        # Bellatrix
+        BELLATRIX_FORK_VERSION: Version [byte 0x02, 0x00, 0x00, 0x64],
+        BELLATRIX_FORK_EPOCH: FAR_FUTURE_EPOCH,
+        # Capella
+        CAPELLA_FORK_VERSION: Version [byte 0x03, 0x00, 0x00, 0x64],
+        CAPELLA_FORK_EPOCH: FAR_FUTURE_EPOCH,
+        # Deneb
+        DENEB_FORK_VERSION: Version [byte 0x04, 0x00, 0x00, 0x64],
+        DENEB_FORK_EPOCH: FAR_FUTURE_EPOCH,
 
+        # Time parameters
+        # ---------------------------------------------------------------
+        # 12 seconds
+        # TODO SECONDS_PER_SLOT: 12,
+        # 14 (estimate from Eth1 mainnet)
+        SECONDS_PER_ETH1_BLOCK: 5,
+        # 2**8 (= 256) epochs ~27 hours
+        MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256,
+        # 2**8 (= 256) epochs ~27 hours
+        SHARD_COMMITTEE_PERIOD: 256,
+        # 2**11 (= 2,048) Eth1 blocks ~8 hours
+        ETH1_FOLLOW_DISTANCE: 2048,
 
-    # Time parameters
-    # ---------------------------------------------------------------
-    # 12 seconds
-    # TODO SECONDS_PER_SLOT: 12,
-    # 14 (estimate from Eth1 mainnet)
-    SECONDS_PER_ETH1_BLOCK: 5,
-    # 2**8 (= 256) epochs ~27 hours
-    MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256,
-    # 2**8 (= 256) epochs ~27 hours
-    SHARD_COMMITTEE_PERIOD: 256,
-    # 2**11 (= 2,048) Eth1 blocks ~8 hours
-    ETH1_FOLLOW_DISTANCE: 2048,
+        # Validator cycle
+        # ---------------------------------------------------------------
+        # 2**2 (= 4)
+        INACTIVITY_SCORE_BIAS: 4,
+        # 2**4 (= 16)
+        INACTIVITY_SCORE_RECOVERY_RATE: 16,
+        # 2**4 * 10**9 (= 16,000,000,000) Gwei
+        EJECTION_BALANCE: 16000000000'u64,
+        # 2**2 (= 4)
+        MIN_PER_EPOCH_CHURN_LIMIT: 4,
+        # 2**16 (= 65,536)
+        CHURN_LIMIT_QUOTIENT: 4096,
+        # [New in Deneb:EIP7514] 2**3 (= 8)
+        MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT: 8,
 
+        # Deposit contract
+        # ---------------------------------------------------------------
+        # Gnosis PoW Mainnet
+        DEPOSIT_CHAIN_ID: 100,
+        DEPOSIT_NETWORK_ID: 100,
+        DEPOSIT_CONTRACT_ADDRESS: default(Eth1Address),
 
-    # Validator cycle
-    # ---------------------------------------------------------------
-    # 2**2 (= 4)
-    INACTIVITY_SCORE_BIAS: 4,
-    # 2**4 (= 16)
-    INACTIVITY_SCORE_RECOVERY_RATE: 16,
-    # 2**4 * 10**9 (= 16,000,000,000) Gwei
-    EJECTION_BALANCE: 16000000000'u64,
-    # 2**2 (= 4)
-    MIN_PER_EPOCH_CHURN_LIMIT: 4,
-    # 2**16 (= 65,536)
-    CHURN_LIMIT_QUOTIENT: 4096,
-    # [New in Deneb:EIP7514] 2**3 (= 8)
-    MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT: 8,
+        # Networking
+        # ---------------------------------------------------------------
+        # `10 * 2**20` (= 10485760, 10 MiB)
+        # TODO GOSSIP_MAX_SIZE: 10485760,
+        # `2**10` (= 1024)
+        # TODO MAX_REQUEST_BLOCKS: 1024,
+        # `2**8` (= 256)
+        # TODO EPOCHS_PER_SUBNET_SUBSCRIPTION: 256,
+        # `MIN_VALIDATOR_WITHDRAWABILITY_DELAY + CHURN_LIMIT_QUOTIENT // 2` (= 33024, ~5 months)
+        MIN_EPOCHS_FOR_BLOCK_REQUESTS: 33024,
+        # `10 * 2**20` (=10485760, 10 MiB)
+        # TODO MAX_CHUNK_SIZE: 10485760,
+        # 5s
+        # TODO TTFB_TIMEOUT: 5,
+        # 10s
+        # TODO RESP_TIMEOUT: 10,
+        # TODO ATTESTATION_PROPAGATION_SLOT_RANGE: 32,
+        # 500ms
+        # TODO MAXIMUM_GOSSIP_CLOCK_DISPARITY: 500,
+        # TODO MESSAGE_DOMAIN_INVALID_SNAPPY: [byte 0x00, 0x00, 0x00, 0x00],
+        # TODO MESSAGE_DOMAIN_VALID_SNAPPY: [byte 0x01, 0x00, 0x00, 0x00],
+        # 2 subnets per node
+        # TODO SUBNETS_PER_NODE: 2,
+        # 2**8 (= 64)
+        # TODO ATTESTATION_SUBNET_COUNT: 64,
+        # TODO ATTESTATION_SUBNET_EXTRA_BITS: 0,
+        # ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
+        # TODO ATTESTATION_SUBNET_PREFIX_BITS: 6,
 
-    # Deposit contract
-    # ---------------------------------------------------------------
-    # Gnosis PoW Mainnet
-    DEPOSIT_CHAIN_ID: 100,
-    DEPOSIT_NETWORK_ID: 100,
-    DEPOSIT_CONTRACT_ADDRESS: default(Eth1Address),
-
-    # Networking
-    # ---------------------------------------------------------------
-    # `10 * 2**20` (= 10485760, 10 MiB)
-    # TODO GOSSIP_MAX_SIZE: 10485760,
-    # `2**10` (= 1024)
-    # TODO MAX_REQUEST_BLOCKS: 1024,
-    # `2**8` (= 256)
-    # TODO EPOCHS_PER_SUBNET_SUBSCRIPTION: 256,
-    # `MIN_VALIDATOR_WITHDRAWABILITY_DELAY + CHURN_LIMIT_QUOTIENT // 2` (= 33024, ~5 months)
-    MIN_EPOCHS_FOR_BLOCK_REQUESTS: 33024,
-    # `10 * 2**20` (=10485760, 10 MiB)
-    # TODO MAX_CHUNK_SIZE: 10485760,
-    # 5s
-    # TODO TTFB_TIMEOUT: 5,
-    # 10s
-    # TODO RESP_TIMEOUT: 10,
-    # TODO ATTESTATION_PROPAGATION_SLOT_RANGE: 32,
-    # 500ms
-    # TODO MAXIMUM_GOSSIP_CLOCK_DISPARITY: 500,
-    # TODO MESSAGE_DOMAIN_INVALID_SNAPPY: [byte 0x00, 0x00, 0x00, 0x00],
-    # TODO MESSAGE_DOMAIN_VALID_SNAPPY: [byte 0x01, 0x00, 0x00, 0x00],
-    # 2 subnets per node
-    # TODO SUBNETS_PER_NODE: 2,
-    # 2**8 (= 64)
-    # TODO ATTESTATION_SUBNET_COUNT: 64,
-    # TODO ATTESTATION_SUBNET_EXTRA_BITS: 0,
-    # ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
-    # TODO ATTESTATION_SUBNET_PREFIX_BITS: 6,
-
-    # Deneb
-    # `2**7` (=128)
-    # TODO MAX_REQUEST_BLOCKS_DENEB: 128,
-    # MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK
-    # TODO MAX_REQUEST_BLOB_SIDECARS: 768,
-    # `2**12` (= 4096 epochs, ~18 days)
-    MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS: 16384,
-    # `6`
-    # TODO BLOB_SIDECAR_SUBNET_COUNT: 6,
-  )
-
+        # Deneb
+        # `2**7` (=128)
+        # TODO MAX_REQUEST_BLOCKS_DENEB: 128,
+        # MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK
+        # TODO MAX_REQUEST_BLOB_SIDECARS: 768,
+        # `2**12` (= 4096 epochs, ~18 days)
+        MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS: 16384
+          # `6`
+          # TODO BLOB_SIDECAR_SUBNET_COUNT: 6,
+        ,
+      )
 elif const_preset == "minimal":
   import ./presets/minimal
   export minimal
@@ -423,141 +433,140 @@ elif const_preset == "minimal":
   const SECONDS_PER_SLOT* {.intdefine.}: uint64 = 6
 
   # https://github.com/ethereum/consensus-specs/blob/v1.4.0-beta.5/configs/minimal.yaml
-  const defaultRuntimeConfig* = RuntimeConfig(
-    # Minimal config
+  const
+    defaultRuntimeConfig* =
+      RuntimeConfig(
+        # Minimal config
 
-    # Extends the minimal preset
-    PRESET_BASE: "minimal",
+        # Extends the minimal preset
+        PRESET_BASE: "minimal",
 
-    # Free-form short name of the network that this configuration applies to - known
-    # canonical network names include:
-    # * 'mainnet' - there can be only one
-    # * 'prater' - testnet
-    # * 'ropsten' - testnet
-    # * 'sepolia' - testnet
-    # * 'holesky' - testnet
-    # Must match the regex: [a-z0-9\-]
-    CONFIG_NAME: "minimal",
+        # Free-form short name of the network that this configuration applies to - known
+        # canonical network names include:
+        # * 'mainnet' - there can be only one
+        # * 'prater' - testnet
+        # * 'ropsten' - testnet
+        # * 'sepolia' - testnet
+        # * 'holesky' - testnet
+        # Must match the regex: [a-z0-9\-]
+        CONFIG_NAME: "minimal",
 
-    # Transition
-    # ---------------------------------------------------------------
-    # 2**256-2**10 for testing minimal network
-    TERMINAL_TOTAL_DIFFICULTY:
-      u256"115792089237316195423570985008687907853269984665640564039457584007913129638912",
-    # By default, don't use these params
-    TERMINAL_BLOCK_HASH: BlockHash.fromHex(
-      "0x0000000000000000000000000000000000000000000000000000000000000000"),
+        # Transition
+        # ---------------------------------------------------------------
+        # 2**256-2**10 for testing minimal network
+        TERMINAL_TOTAL_DIFFICULTY:
+          u256"115792089237316195423570985008687907853269984665640564039457584007913129638912",
+        # By default, don't use these params
+        TERMINAL_BLOCK_HASH:
+          BlockHash.fromHex(
+            "0x0000000000000000000000000000000000000000000000000000000000000000"
+          ),
 
+        # Genesis
+        # ---------------------------------------------------------------
+        # [customized]
+        MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 64,
+        # Jan 3, 2020
+        MIN_GENESIS_TIME: 1578009600,
+        # Highest byte set to 0x01 to avoid collisions with mainnet versioning
+        GENESIS_FORK_VERSION: Version [byte 0x00, 0x00, 0x00, 0x01],
+        # [customized] Faster to spin up testnets, but does not give validator reasonable warning time for genesis
+        GENESIS_DELAY: 300,
 
-    # Genesis
-    # ---------------------------------------------------------------
-    # [customized]
-    MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 64,
-    # Jan 3, 2020
-    MIN_GENESIS_TIME: 1578009600,
-    # Highest byte set to 0x01 to avoid collisions with mainnet versioning
-    GENESIS_FORK_VERSION: Version [byte 0x00, 0x00, 0x00, 0x01],
-    # [customized] Faster to spin up testnets, but does not give validator reasonable warning time for genesis
-    GENESIS_DELAY: 300,
+        # Forking
+        # ---------------------------------------------------------------
+        # Values provided for illustrative purposes.
+        # Individual tests/testnets may set different values.
 
+        # Altair
+        ALTAIR_FORK_VERSION: Version [byte 0x01, 0x00, 0x00, 0x01],
+        ALTAIR_FORK_EPOCH: Epoch(uint64.high),
+        # Bellatrix
+        BELLATRIX_FORK_VERSION: Version [byte 0x02, 0x00, 0x00, 0x01],
+        BELLATRIX_FORK_EPOCH: Epoch(uint64.high),
+        # Capella
+        CAPELLA_FORK_VERSION: Version [byte 0x03, 0x00, 0x00, 0x01],
+        CAPELLA_FORK_EPOCH: Epoch(uint64.high),
+        # Deneb
+        DENEB_FORK_VERSION: Version [byte 0x04, 0x00, 0x00, 0x01],
+        DENEB_FORK_EPOCH: Epoch(uint64.high),
 
-    # Forking
-    # ---------------------------------------------------------------
-    # Values provided for illustrative purposes.
-    # Individual tests/testnets may set different values.
+        # Time parameters
+        # ---------------------------------------------------------------
+        # [customized] Faster for testing purposes
+        # TODO SECONDS_PER_SLOT: 6,
+        # 14 (estimate from Eth1 mainnet)
+        SECONDS_PER_ETH1_BLOCK: 14,
+        # 2**8 (= 256) epochs
+        MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256,
+        # [customized] higher frequency of committee turnover and faster time to acceptable voluntary exit
+        SHARD_COMMITTEE_PERIOD: 64,
+        # [customized] process deposits more quickly, but insecure
+        ETH1_FOLLOW_DISTANCE: 16,
 
-    # Altair
-    ALTAIR_FORK_VERSION: Version [byte 0x01, 0x00, 0x00, 0x01],
-    ALTAIR_FORK_EPOCH: Epoch(uint64.high),
-    # Bellatrix
-    BELLATRIX_FORK_VERSION: Version [byte 0x02, 0x00, 0x00, 0x01],
-    BELLATRIX_FORK_EPOCH: Epoch(uint64.high),
-    # Capella
-    CAPELLA_FORK_VERSION: Version [byte 0x03, 0x00, 0x00, 0x01],
-    CAPELLA_FORK_EPOCH: Epoch(uint64.high),
-    # Deneb
-    DENEB_FORK_VERSION: Version [byte 0x04, 0x00, 0x00, 0x01],
-    DENEB_FORK_EPOCH: Epoch(uint64.high),
+        # Validator cycle
+        # ---------------------------------------------------------------
+        # 2**2 (= 4)
+        INACTIVITY_SCORE_BIAS: 4,
+        # 2**4 (= 16)
+        INACTIVITY_SCORE_RECOVERY_RATE: 16,
+        # 2**4 * 10**9 (= 16,000,000,000) Gwei
+        EJECTION_BALANCE: 16000000000'u64,
+        # [customized] more easily demonstrate the difference between this value and the activation churn limit
+        MIN_PER_EPOCH_CHURN_LIMIT: 2,
+        # [customized] scale queue churn at much lower validator counts for testing
+        CHURN_LIMIT_QUOTIENT: 32,
+        # [New in Deneb:EIP7514] [customized]
+        MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT: 4,
 
+        # Deposit contract
+        # ---------------------------------------------------------------
+        # Ethereum Goerli testnet
+        DEPOSIT_CHAIN_ID: 5,
+        DEPOSIT_NETWORK_ID: 5,
+        # Configured on a per testnet basis
+        DEPOSIT_CONTRACT_ADDRESS: default(Eth1Address),
 
-    # Time parameters
-    # ---------------------------------------------------------------
-    # [customized] Faster for testing purposes
-    # TODO SECONDS_PER_SLOT: 6,
-    # 14 (estimate from Eth1 mainnet)
-    SECONDS_PER_ETH1_BLOCK: 14,
-    # 2**8 (= 256) epochs
-    MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256,
-    # [customized] higher frequency of committee turnover and faster time to acceptable voluntary exit
-    SHARD_COMMITTEE_PERIOD: 64,
-    # [customized] process deposits more quickly, but insecure
-    ETH1_FOLLOW_DISTANCE: 16,
+        # Networking
+        # ---------------------------------------------------------------
+        # `10 * 2**20` (= 10485760, 10 MiB)
+        # TODO GOSSIP_MAX_SIZE: 10485760,
+        # `2**10` (= 1024)
+        # TODO MAX_REQUEST_BLOCKS: 1024,
+        # `2**8` (= 256)
+        # TODO EPOCHS_PER_SUBNET_SUBSCRIPTION: 256,
+        # [customized] `MIN_VALIDATOR_WITHDRAWABILITY_DELAY + CHURN_LIMIT_QUOTIENT // 2` (= 272)
+        MIN_EPOCHS_FOR_BLOCK_REQUESTS: 272,
+        # `10 * 2**20` (=10485760, 10 MiB)
+        # TODO MAX_CHUNK_SIZE: 10485760,
+        # 5s
+        # TODO TTFB_TIMEOUT: 5,
+        # 10s
+        # TODO RESP_TIMEOUT: 10,
+        # TODO ATTESTATION_PROPAGATION_SLOT_RANGE: 32,
+        # 500ms
+        # TODO MAXIMUM_GOSSIP_CLOCK_DISPARITY: 500,
+        # TODO MESSAGE_DOMAIN_INVALID_SNAPPY: [byte 0x00, 0x00, 0x00, 0x00],
+        # TODO MESSAGE_DOMAIN_VALID_SNAPPY: [byte 0x01, 0x00, 0x00, 0x00],
+        # 2 subnets per node
+        # TODO SUBNETS_PER_NODE: 2,
+        # 2**8 (= 64)
+        # TODO ATTESTATION_SUBNET_COUNT: 64,
+        # TODO ATTESTATION_SUBNET_EXTRA_BITS: 0,
+        # ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
+        # TODO ATTESTATION_SUBNET_PREFIX_BITS: 6,
 
-
-    # Validator cycle
-    # ---------------------------------------------------------------
-    # 2**2 (= 4)
-    INACTIVITY_SCORE_BIAS: 4,
-    # 2**4 (= 16)
-    INACTIVITY_SCORE_RECOVERY_RATE: 16,
-    # 2**4 * 10**9 (= 16,000,000,000) Gwei
-    EJECTION_BALANCE: 16000000000'u64,
-    # [customized] more easily demonstrate the difference between this value and the activation churn limit
-    MIN_PER_EPOCH_CHURN_LIMIT: 2,
-    # [customized] scale queue churn at much lower validator counts for testing
-    CHURN_LIMIT_QUOTIENT: 32,
-    # [New in Deneb:EIP7514] [customized]
-    MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT: 4,
-
-
-    # Deposit contract
-    # ---------------------------------------------------------------
-    # Ethereum Goerli testnet
-    DEPOSIT_CHAIN_ID: 5,
-    DEPOSIT_NETWORK_ID: 5,
-    # Configured on a per testnet basis
-    DEPOSIT_CONTRACT_ADDRESS: default(Eth1Address),
-
-    # Networking
-    # ---------------------------------------------------------------
-    # `10 * 2**20` (= 10485760, 10 MiB)
-    # TODO GOSSIP_MAX_SIZE: 10485760,
-    # `2**10` (= 1024)
-    # TODO MAX_REQUEST_BLOCKS: 1024,
-    # `2**8` (= 256)
-    # TODO EPOCHS_PER_SUBNET_SUBSCRIPTION: 256,
-    # [customized] `MIN_VALIDATOR_WITHDRAWABILITY_DELAY + CHURN_LIMIT_QUOTIENT // 2` (= 272)
-    MIN_EPOCHS_FOR_BLOCK_REQUESTS: 272,
-    # `10 * 2**20` (=10485760, 10 MiB)
-    # TODO MAX_CHUNK_SIZE: 10485760,
-    # 5s
-    # TODO TTFB_TIMEOUT: 5,
-    # 10s
-    # TODO RESP_TIMEOUT: 10,
-    # TODO ATTESTATION_PROPAGATION_SLOT_RANGE: 32,
-    # 500ms
-    # TODO MAXIMUM_GOSSIP_CLOCK_DISPARITY: 500,
-    # TODO MESSAGE_DOMAIN_INVALID_SNAPPY: [byte 0x00, 0x00, 0x00, 0x00],
-    # TODO MESSAGE_DOMAIN_VALID_SNAPPY: [byte 0x01, 0x00, 0x00, 0x00],
-    # 2 subnets per node
-    # TODO SUBNETS_PER_NODE: 2,
-    # 2**8 (= 64)
-    # TODO ATTESTATION_SUBNET_COUNT: 64,
-    # TODO ATTESTATION_SUBNET_EXTRA_BITS: 0,
-    # ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
-    # TODO ATTESTATION_SUBNET_PREFIX_BITS: 6,
-
-    # Deneb
-    # `2**7` (=128)
-    # TODO MAX_REQUEST_BLOCKS_DENEB: 128,
-    # MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK
-    # TODO MAX_REQUEST_BLOB_SIDECARS: 768,
-    # `2**12` (= 4096 epochs, ~18 days)
-    MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS: 4096,
-    # `6`
-    # TODO BLOB_SIDECAR_SUBNET_COUNT: 6,
-  )
-
+        # Deneb
+        # `2**7` (=128)
+        # TODO MAX_REQUEST_BLOCKS_DENEB: 128,
+        # MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK
+        # TODO MAX_REQUEST_BLOB_SIDECARS: 768,
+        # `2**12` (= 4096 epochs, ~18 days)
+        MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS: 4096
+          # `6`
+          # TODO BLOB_SIDECAR_SUBNET_COUNT: 6,
+        ,
+      )
 else:
   {.error: "Only mainnet and minimal presets supported".}
   # macro createConstantsFromPreset*(path: static string): untyped =
@@ -583,8 +592,8 @@ else:
 
   # createConstantsFromPreset const_preset
 
-const SLOTS_PER_SYNC_COMMITTEE_PERIOD* =
-  SLOTS_PER_EPOCH * EPOCHS_PER_SYNC_COMMITTEE_PERIOD
+const
+  SLOTS_PER_SYNC_COMMITTEE_PERIOD* = SLOTS_PER_EPOCH * EPOCHS_PER_SYNC_COMMITTEE_PERIOD
 
 # https://github.com/ethereum/consensus-specs/blob/v1.4.0-alpha.3/specs/phase0/p2p-interface.md#configuration
 func safeMinEpochsForBlockRequests*(cfg: RuntimeConfig): uint64 =
@@ -597,19 +606,19 @@ func parse(T: type uint64, input: string): T {.raises: [ValueError].} =
       raise newException(ValueError, "The constant value should be a valid hex integer")
   else:
     if parseBiggestUInt(input, res) != input.len:
-      raise newException(ValueError, "The constant value should be a valid unsigned integer")
+      raise newException(
+          ValueError, "The constant value should be a valid unsigned integer"
+        )
 
   uint64(res)
 
 template parse(T: type byte, input: string): T =
   byte parse(uint64, input)
 
-func parse(T: type array[4, byte], input: string): T
-           {.raises: [ValueError].} =
+func parse(T: type array[4, byte], input: string): T {.raises: [ValueError].} =
   hexToByteArray(input, 4)
 
-func parse(T: type Version, input: string): T
-           {.raises: [ValueError].} =
+func parse(T: type Version, input: string): T {.raises: [ValueError].} =
   Version hexToByteArray(input, 4)
 
 template parse(T: type Slot, input: string): T =
@@ -630,20 +639,21 @@ template parse(T: type BlockHash, input: string): T =
 template parse(T: type UInt256, input: string): T =
   parse(input, UInt256, 10)
 
-func parse(T: type DomainType, input: string): T
-           {.raises: [ValueError].} =
+func parse(T: type DomainType, input: string): T {.raises: [ValueError].} =
   DomainType hexToByteArray(input, 4)
 
 proc readRuntimeConfig*(
-    fileContent: string, path: string): (RuntimeConfig, seq[string]) {.
-    raises: [PresetFileError, PresetIncompatibleError].} =
+    fileContent: string, path: string
+): (RuntimeConfig, seq[string]) {.raises: [PresetFileError, PresetIncompatibleError].} =
   var
     lineNum = 0
     cfg = defaultRuntimeConfig
 
-  template lineinfo: string =
-    try: "$1($2) " % [path, $lineNum]
-    except ValueError: path
+  template lineinfo(): string =
+    try:
+      "$1($2) " % [path, $lineNum]
+    except ValueError:
+      path
 
   template fail(msg) =
     raise newException(PresetFileError, lineinfo() & msg)
@@ -655,43 +665,48 @@ proc readRuntimeConfig*(
   var values: Table[string, string]
   for line in splitLines(fileContent):
     inc lineNum
-    if line.len == 0 or line[0] == '#': continue
+    if line.len == 0 or line[0] == '#':
+      continue
     # remove any trailing comments
     let line = line.split("#")[0]
     let lineParts = line.split(":")
     if lineParts.len != 2:
       fail "Invalid syntax: A preset file should include only assignments in the form 'ConstName: Value'"
 
-    if lineParts[0] in ignoredValues: continue
+    if lineParts[0] in ignoredValues:
+      continue
 
     values[lineParts[0]] = lineParts[1].strip
 
   # Certain config keys are baked into the binary at compile-time
   # and cannot be overridden via config.
   template checkCompatibility(
-      constValue: untyped, name: string, operator: untyped = `==`): untyped =
+      constValue: untyped, name: string, operator: untyped = `==`
+  ): untyped =
     if values.hasKey(name):
       const opDesc = astToStr(operator)
       try:
         let value = parse(typeof(constValue), values[name])
         when constValue is distinct:
           if not operator(distinctBase(value), distinctBase(constValue)):
-            raise (ref PresetFileError)(msg:
-              "Cannot override config" &
-              " (required: " & name & opDesc & $distinctBase(constValue) &
-              " - config: " & name & "=" & values[name] & ")")
+            raise (ref PresetFileError)(
+                msg:
+                  "Cannot override config" & " (required: " & name & opDesc &
+                  $distinctBase(constValue) & " - config: " & name & "=" & values[name] &
+                  ")"
+              )
         else:
           if not operator(value, constValue):
-            raise (ref PresetFileError)(msg:
-              "Cannot override config" &
-              " (required: " & name & opDesc & $constValue &
-              " - config: " & name & "=" & values[name] & ")")
+            raise (ref PresetFileError)(
+                msg:
+                  "Cannot override config" & " (required: " & name & opDesc & $constValue &
+                  " - config: " & name & "=" & values[name] & ")"
+              )
         values.del name
       except ValueError:
         raise (ref PresetFileError)(msg: "Unable to parse " & name)
 
-  template checkCompatibility(
-      constValue: untyped, operator: untyped = `==`): untyped =
+  template checkCompatibility(constValue: untyped, operator: untyped = `==`): untyped =
     block:
       const name = astToStr(constValue)
       checkCompatibility(constValue, name, operator)
@@ -755,7 +770,7 @@ proc readRuntimeConfig*(
   checkCompatibility RESP_TIMEOUT
   checkCompatibility ATTESTATION_PROPAGATION_SLOT_RANGE
   checkCompatibility MAXIMUM_GOSSIP_CLOCK_DISPARITY.milliseconds.uint64,
-                     "MAXIMUM_GOSSIP_CLOCK_DISPARITY"
+    "MAXIMUM_GOSSIP_CLOCK_DISPARITY"
   checkCompatibility MESSAGE_DOMAIN_INVALID_SNAPPY
   checkCompatibility MESSAGE_DOMAIN_VALID_SNAPPY
   checkCompatibility SUBNETS_PER_NODE
@@ -765,7 +780,7 @@ proc readRuntimeConfig*(
 
   checkCompatibility MAX_REQUEST_BLOCKS_DENEB
   checkCompatibility MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK,
-                     "MAX_REQUEST_BLOB_SIDECARS"
+    "MAX_REQUEST_BLOB_SIDECARS"
   checkCompatibility BLOB_SIDECAR_SUBNET_COUNT
 
   # https://github.com/ethereum/consensus-specs/blob/v1.4.0-beta.5/specs/phase0/fork-choice.md#configuration
@@ -785,11 +800,14 @@ proc readRuntimeConfig*(
 
   if cfg.PRESET_BASE != const_preset:
     raise (ref PresetIncompatibleError)(
-      msg: "Config not compatible with binary, compile with -d:const_preset=" & cfg.PRESET_BASE)
+        msg:
+          "Config not compatible with binary, compile with -d:const_preset=" &
+          cfg.PRESET_BASE
+      )
 
   # Requires initialized `cfg`
   checkCompatibility cfg.safeMinEpochsForBlockRequests(),
-                     "MIN_EPOCHS_FOR_BLOCK_REQUESTS", `>=`
+    "MIN_EPOCHS_FOR_BLOCK_REQUESTS", `>=`
 
   var unknowns: seq[string]
   for name in values.keys:
@@ -798,8 +816,10 @@ proc readRuntimeConfig*(
   (cfg, unknowns)
 
 proc readRuntimeConfig*(
-    path: string): (RuntimeConfig, seq[string]) {.
-    raises: [IOError, PresetFileError, PresetIncompatibleError].} =
+    path: string
+): (RuntimeConfig, seq[string]) {.
+    raises: [IOError, PresetFileError, PresetIncompatibleError]
+.} =
   readRuntimeConfig(readFile(path), path)
 
 template name*(cfg: RuntimeConfig): string =

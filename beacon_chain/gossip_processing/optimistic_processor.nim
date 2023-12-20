@@ -7,11 +7,7 @@
 
 {.push raises: [].}
 
-import
-  chronicles, chronos,
-  ../spec/forks,
-  ../beacon_clock,
-  ./gossip_validation
+import chronicles, chronos, ../spec/forks, ../beacon_clock, ./gossip_validation
 
 from ./eth2_processor import ValidationRes
 
@@ -22,7 +18,7 @@ logScope:
 
 const
   # Maximum `blocks` to cache (not validated; deleted on new optimistic header)
-  maxBlocks = 16  # <= `GOSSIP_MAX_SIZE_BELLATRIX` (10 MB) each
+  maxBlocks = 16 # <= `GOSSIP_MAX_SIZE_BELLATRIX` (10 MB) each
 
   # Minimum interval at which spam is logged
   minLogInterval = chronos.seconds(5)
@@ -30,7 +26,8 @@ const
 type
   MsgTrustedBlockProcessor* =
     proc(signedBlock: ForkedMsgTrustedSignedBeaconBlock): Future[void] {.
-      gcsafe, raises: [].}
+      gcsafe, raises: []
+    .}
 
   OptimisticProcessor* = ref object
     getBeaconTime: GetBeaconTimeFn
@@ -41,19 +38,22 @@ type
     logMoment: Moment
 
 proc initOptimisticProcessor*(
-    getBeaconTime: GetBeaconTimeFn,
-    optimisticVerifier: MsgTrustedBlockProcessor): OptimisticProcessor =
+    getBeaconTime: GetBeaconTimeFn, optimisticVerifier: MsgTrustedBlockProcessor
+): OptimisticProcessor =
   OptimisticProcessor(
-    getBeaconTime: getBeaconTime,
-    optimisticVerifier: optimisticVerifier)
+    getBeaconTime: getBeaconTime, optimisticVerifier: optimisticVerifier
+  )
 
 proc validateBeaconBlock(
     self: OptimisticProcessor,
     signed_beacon_block: ForkySignedBeaconBlock,
-    wallTime: BeaconTime): Result[void, ValidationError] =
+    wallTime: BeaconTime,
+): Result[void, ValidationError] =
   ## Minimally validate a block for potential relevance.
-  if not (signed_beacon_block.message.slot <=
-      (wallTime + MAXIMUM_GOSSIP_CLOCK_DISPARITY).slotOrZero):
+  if not (
+    signed_beacon_block.message.slot <=
+    (wallTime + MAXIMUM_GOSSIP_CLOCK_DISPARITY).slotOrZero
+  ):
     return errIgnore("BeaconBlock: slot too high")
 
   if signed_beacon_block.message.slot <= self.latestOptimisticSlot:
@@ -65,8 +65,8 @@ proc validateBeaconBlock(
   ok()
 
 proc processSignedBeaconBlock*(
-    self: OptimisticProcessor,
-    signedBlock: ForkySignedBeaconBlock): ValidationRes =
+    self: OptimisticProcessor, signedBlock: ForkySignedBeaconBlock
+): ValidationRes =
   let
     wallTime = self.getBeaconTime()
     (afterGenesis, wallSlot) = wallTime.toSlot()
@@ -103,7 +103,8 @@ proc processSignedBeaconBlock*(
     block:
       let now = Moment.now()
       if self.logMoment + minLogInterval <= now:
-        logScope: minLogInterval
+        logScope:
+          minLogInterval
         body
         self.logMoment = now
 
@@ -131,7 +132,8 @@ proc processSignedBeaconBlock*(
   return errIgnore("Validation delegated to sync committee")
 
 proc setOptimisticHeader*(
-    self: OptimisticProcessor, optimisticHeader: BeaconBlockHeader) =
+    self: OptimisticProcessor, optimisticHeader: BeaconBlockHeader
+) =
   # If irrelevant, skip processing
   if optimisticHeader.slot <= self.latestOptimisticSlot:
     return

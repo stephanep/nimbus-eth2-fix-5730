@@ -7,14 +7,11 @@
 
 {.used.}
 
-import
-  unittest2,
-  ../beacon_chain/spec/beacon_time
+import unittest2, ../beacon_chain/spec/beacon_time
 
 suite "Beacon time":
   test "basics":
-    let
-      s0 = Slot(0)
+    let s0 = Slot(0)
 
     check:
       s0.epoch() == Epoch(0)
@@ -35,18 +32,16 @@ suite "Beacon time":
 
       Slot(5).start_beacon_time() > Slot(4).start_beacon_time()
 
-      Slot(4).start_beacon_time() +
-        (Slot(5).start_beacon_time() - Slot(4).start_beacon_time()) ==
-        Slot(5).start_beacon_time()
+      Slot(4).start_beacon_time() + (
+        Slot(5).start_beacon_time() - Slot(4).start_beacon_time()
+      ) == Slot(5).start_beacon_time()
 
       Epoch(3).start_slot.is_epoch()
       SyncCommitteePeriod(5).start_epoch().is_sync_committee_period()
       SyncCommitteePeriod(5).start_slot().is_sync_committee_period()
 
-      Epoch(5).start_slot.sync_committee_period ==
-        Epoch(5).sync_committee_period
-      SyncCommitteePeriod(5).start_slot.sync_committee_period ==
-        SyncCommitteePeriod(5)
+      Epoch(5).start_slot.sync_committee_period == Epoch(5).sync_committee_period
+      SyncCommitteePeriod(5).start_slot.sync_committee_period == SyncCommitteePeriod(5)
 
     block:
       var counts = 0

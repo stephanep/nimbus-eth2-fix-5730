@@ -8,8 +8,7 @@
 # TODO: These should be added to the Chronos's asyncfutures2 module
 #       See https://github.com/status-im/nim-chronos/pull/339
 
-import
-  chronos
+import chronos
 
 proc firstCompletedFuture*(futs: varargs[FutureBase]): Future[FutureBase] =
   ## Returns a future which will complete and return completed FutureBase,
@@ -42,27 +41,31 @@ proc firstCompletedFuture*(futs: varargs[FutureBase]): Future[FutureBase] =
   var failedFutures = 0
 
   var cb: proc(udata: pointer) {.gcsafe, raises: [].}
-  cb = proc(udata: pointer) {.gcsafe, raises: [].} =
-    if not(retFuture.finished()):
-      var res: FutureBase
-      var rfut = cast[FutureBase](udata)
-      if rfut.completed:
-        for i in 0..<len(nfuts):
-          if nfuts[i] != rfut:
-            nfuts[i].removeCallback(cb)
+  cb =
+    proc(udata: pointer) {.gcsafe, raises: [].} =
+        if not (retFuture.finished()):
+          var res: FutureBase
+          var rfut = cast[FutureBase](udata)
+          if rfut.completed:
+            for i in 0..<len(nfuts):
+              if nfuts[i] != rfut:
+                nfuts[i].removeCallback(cb)
+              else:
+                res = nfuts[i]
+            retFuture.complete(res)
           else:
-            res = nfuts[i]
-        retFuture.complete(res)
-      else:
-        inc failedFutures
-        if failedFutures == nfuts.len:
-          retFuture.fail(newException(CatchableError,
-            "None of the operations completed successfully"))
+            inc failedFutures
+            if failedFutures == nfuts.len:
+              retFuture.fail(
+                newException(
+                  CatchableError, "None of the operations completed successfully"
+                )
+              )
 
   proc cancellation(udata: pointer) =
     # On cancel we remove all our callbacks only.
     for i in 0..<len(nfuts):
-      if not(nfuts[i].finished()):
+      if not (nfuts[i].finished()):
         nfuts[i].removeCallback(cb)
 
   for fut in nfuts:
@@ -101,5 +104,6 @@ proc firstCompleted*[T](futs: varargs[Future[T]]): Future[T] =
 
   subFuture.addCallback(cb, cast[pointer](subFuture))
 
-  retFuture.cancelCallback = proc (udata: pointer) =
-    subFuture.cancelSoon()
+  retFuture.cancelCallback =
+    proc(udata: pointer) =
+        subFuture.cancelSoon()

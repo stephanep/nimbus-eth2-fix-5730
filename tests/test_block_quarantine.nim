@@ -15,15 +15,19 @@ import
 
 func makeBlock(slot: Slot, parent: Eth2Digest): ForkedSignedBeaconBlock =
   var
-    b = phase0.SignedBeaconBlock(
-      message: phase0.BeaconBlock(slot: slot, parent_root: parent))
+    b =
+      phase0.SignedBeaconBlock(
+        message: phase0.BeaconBlock(slot: slot, parent_root: parent)
+      )
   b.root = hash_tree_root(b.message)
   ForkedSignedBeaconBlock.init(b)
 
 func makeBlobbyBlock(slot: Slot, parent: Eth2Digest): deneb.SignedBeaconBlock =
   var
-    b = deneb.SignedBeaconBlock(
-      message: deneb.BeaconBlock(slot: slot, parent_root: parent))
+    b =
+      deneb.SignedBeaconBlock(
+        message: deneb.BeaconBlock(slot: slot, parent_root: parent)
+      )
   b.root = hash_tree_root(b.message)
   b
 

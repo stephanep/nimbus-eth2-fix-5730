@@ -6,10 +6,7 @@
 # at your option. This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  chronos,
-  chronicles,
-  ../spec/beaconstate,
-  ../consensus_object_pools/blockchain_dag
+  chronos, chronicles, ../spec/beaconstate, ../consensus_object_pools/blockchain_dag
 
 type
   CacheEntry = ref object
@@ -22,23 +19,17 @@ type
     entries: seq[CacheEntry]
     ttl: Duration
 
-const
-  slotDifferenceForCacheHit = 5 * SLOTS_PER_EPOCH
+const slotDifferenceForCacheHit = 5 * SLOTS_PER_EPOCH
 
 logScope:
   topics = "state_ttl_cache"
 
-proc init*(T: type StateTtlCache,
-           cacheSize: Natural,
-           cacheTtl: Duration): T =
+proc init*(T: type StateTtlCache, cacheSize: Natural, cacheTtl: Duration): T =
   doAssert cacheSize > 0
 
-  StateTtlCache(
-    entries: newSeq[CacheEntry](cacheSize),
-    ttl: cacheTtl)
+  StateTtlCache(entries: newSeq[CacheEntry](cacheSize), ttl: cacheTtl)
 
-proc scheduleEntryExpiration(cache: StateTtlCache,
-                             entryIdx: int) =
+proc scheduleEntryExpiration(cache: StateTtlCache, entryIdx: int) =
   proc removeElement(arg: pointer) =
     if cache.entries[entryIdx] == nil:
       return
@@ -56,7 +47,7 @@ proc add*(cache: StateTtlCache, state: ref ForkedHashedBeaconState) =
     lruTime = now
     index = -1
 
-  for i in 0 ..< cache.entries.len:
+  for i in 0..<cache.entries.len:
     if cache.entries[i] == nil:
       index = i
       break
@@ -71,13 +62,13 @@ proc add*(cache: StateTtlCache, state: ref ForkedHashedBeaconState) =
   cache.scheduleEntryExpiration(index)
 
 proc getClosestState*(
-    cache: StateTtlCache, dag: ChainDAGRef,
-    bsi: BlockSlotId): ref ForkedHashedBeaconState =
+    cache: StateTtlCache, dag: ChainDAGRef, bsi: BlockSlotId
+): ref ForkedHashedBeaconState =
   var
     bestSlotDifference = Slot.high
     index = -1
 
-  for i in 0 ..< cache.entries.len:
+  for i in 0..<cache.entries.len:
     if cache.entries[i] == nil:
       continue
 
@@ -92,9 +83,10 @@ proc getClosestState*(
       continue
 
     var cur = bsi
-    for j in 0 ..< slotDifference:
-      cur = dag.parentOrSlot(cur).valueOr:
-        break
+    for j in 0..<slotDifference:
+      cur =
+        dag.parentOrSlot(cur).valueOr:
+          break
 
     if not cache.entries[i].state[].matches_block(cur.bid.root):
       # The cached state and the requested BlockSlot are at different branches

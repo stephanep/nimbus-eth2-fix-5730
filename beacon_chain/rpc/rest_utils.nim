@@ -7,23 +7,23 @@
 
 {.push raises: [].}
 
-import std/macros,
-       results, stew/byteutils, presto,
-       ../spec/[forks],
-       ../spec/eth2_apis/[rest_types, eth2_rest_serialization, rest_common],
-       ../validators/beacon_validators,
-       ../consensus_object_pools/blockchain_dag,
-       ../beacon_node,
-       "."/[rest_constants, state_ttl_cache]
+import
+  std/macros,
+  results,
+  stew/byteutils,
+  presto,
+  ../spec/[forks],
+  ../spec/eth2_apis/[rest_types, eth2_rest_serialization, rest_common],
+  ../validators/beacon_validators,
+  ../consensus_object_pools/blockchain_dag,
+  ../beacon_node,
+  "."/[rest_constants, state_ttl_cache]
 
 export
-  results, eth2_rest_serialization, blockchain_dag, presto, rest_types,
-  rest_constants, rest_common
+  results, eth2_rest_serialization, blockchain_dag, presto, rest_types, rest_constants,
+  rest_common
 
-proc getSyncedHead*(
-       node: BeaconNode,
-       slot: Slot
-     ): Result[BlockRef, cstring] =
+proc getSyncedHead*(node: BeaconNode, slot: Slot): Result[BlockRef, cstring] =
   let head = node.dag.head
 
   if not node.isSynced(head):
@@ -35,23 +35,20 @@ proc getSyncedHead*(
 
   ok(head)
 
-func getCurrentSlot*(node: BeaconNode, slot: Slot):
-    Result[Slot, cstring] =
+func getCurrentSlot*(node: BeaconNode, slot: Slot): Result[Slot, cstring] =
   if slot <= (node.dag.head.slot + (SLOTS_PER_EPOCH * 2)):
     ok(slot)
   else:
     err("Requesting slot too far ahead of the current head")
 
-proc getSyncedHead*(
-       node: BeaconNode,
-       epoch: Epoch,
-     ): Result[BlockRef, cstring] =
+proc getSyncedHead*(node: BeaconNode, epoch: Epoch): Result[BlockRef, cstring] =
   if epoch > MaxEpoch:
     return err("Requesting epoch for which slot would overflow")
   node.getSyncedHead(epoch.start_slot())
 
-func getBlockSlotId*(node: BeaconNode,
-                     stateIdent: StateIdent): Result[BlockSlotId, cstring] =
+func getBlockSlotId*(
+    node: BeaconNode, stateIdent: StateIdent
+): Result[BlockSlotId, cstring] =
   case stateIdent.kind
   of StateQueryKind.Slot:
     # Limit requests by state id to the next epoch with respect to the current
@@ -60,11 +57,12 @@ func getBlockSlotId*(node: BeaconNode,
     if stateIdent.slot.epoch > (node.dag.head.slot.epoch + 1):
       return err("Requesting state too far ahead of current head")
 
-    let bsi = node.dag.getBlockIdAtSlot(stateIdent.slot).valueOr:
-      return err("History for given slot not available")
+    let
+      bsi =
+        node.dag.getBlockIdAtSlot(stateIdent.slot).valueOr:
+          return err("History for given slot not available")
 
     ok(bsi)
-
   of StateQueryKind.Root:
     if stateIdent.root == getStateRoot(node.dag.headState):
       ok(node.dag.head.bid.atSlot())
@@ -77,10 +75,11 @@ func getBlockSlotId*(node: BeaconNode,
         if i >= headSlot:
           break
         if getStateField(node.dag.headState, state_roots).item(
-            (headSlot - i - 1) mod SLOTS_PER_HISTORICAL_ROOT) ==
-            stateIdent.root:
+          (headSlot - i - 1) mod SLOTS_PER_HISTORICAL_ROOT
+        ) == stateIdent.root:
           return node.dag.getBlockIdAtSlot(headSlot - i - 1).orErr(
-            cstring("History for for given root not available"))
+              cstring("History for for given root not available")
+            )
 
       # We don't have a state root -> BlockSlot mapping
       err("State root not found - use by-slot lookup to query deep state history")
@@ -89,17 +88,21 @@ func getBlockSlotId*(node: BeaconNode,
     of StateIdentType.Head:
       ok(node.dag.head.bid.atSlot())
     of StateIdentType.Genesis:
-      let bid = node.dag.getBlockIdAtSlot(GENESIS_SLOT).valueOr:
-        return err("Genesis state not available / pruned")
+      let
+        bid =
+          node.dag.getBlockIdAtSlot(GENESIS_SLOT).valueOr:
+            return err("Genesis state not available / pruned")
       ok bid
     of StateIdentType.Finalized:
       ok(node.dag.finalizedHead.toBlockSlotId().expect("not nil"))
     of StateIdentType.Justified:
       # Take checkpoint-synced nodes into account
-      let justifiedEpoch =
-        max(
-          getStateField(node.dag.headState, current_justified_checkpoint).epoch,
-          node.dag.finalizedHead.slot.epoch)
+      let
+        justifiedEpoch =
+          max(
+            getStateField(node.dag.headState, current_justified_checkpoint).epoch,
+            node.dag.finalizedHead.slot.epoch,
+          )
       ok(node.dag.head.atEpochStart(justifiedEpoch).toBlockSlotId().expect("not nil"))
 
 proc getBlockId*(node: BeaconNode, id: BlockIdent): Opt[BlockId] =
@@ -109,7 +112,10 @@ proc getBlockId*(node: BeaconNode, id: BlockIdent): Opt[BlockId] =
     of BlockIdentType.Head:
       ok(node.dag.head.bid)
     of BlockIdentType.Genesis:
-      node.dag.getBlockIdAtSlot(GENESIS_SLOT).map(proc(x: auto): auto = x.bid)
+      node.dag.getBlockIdAtSlot(GENESIS_SLOT).map(
+        proc(x: auto): auto =
+            x.bid
+      )
     of BlockIdentType.Finalized:
       ok(node.dag.finalizedHead.blck.bid)
   of BlockQueryKind.Root:
@@ -121,24 +127,27 @@ proc getBlockId*(node: BeaconNode, id: BlockIdent): Opt[BlockId] =
     else:
       err()
 
-proc getForkedBlock*(node: BeaconNode, id: BlockIdent):
-    Opt[ForkedTrustedSignedBeaconBlock] =
-  let bid = ? node.getBlockId(id)
+proc getForkedBlock*(
+    node: BeaconNode, id: BlockIdent
+): Opt[ForkedTrustedSignedBeaconBlock] =
+  let bid = ?node.getBlockId(id)
 
   node.dag.getForkedBlock(bid)
 
 func disallowInterruptionsAux(body: NimNode) =
   for n in body:
-    const because =
-      "because the `state` variable may be mutated (and thus invalidated) " &
-      "before the function resumes execution."
+    const
+      because =
+        "because the `state` variable may be mutated (and thus invalidated) " &
+        "before the function resumes execution."
 
     if n.kind == nnkYieldStmt:
       macros.error "You cannot use yield in this block " & because, n
 
-    if (n.kind in {nnkCall, nnkCommand} and
-       n[0].kind in {nnkIdent, nnkSym} and
-       $n[0] == "await"):
+    if (
+      n.kind in {nnkCall, nnkCommand} and n[0].kind in {nnkIdent, nnkSym} and
+      $n[0] == "await"
+    ):
       macros.error "You cannot use await in this block " & because, n
 
     disallowInterruptionsAux(n)
@@ -146,10 +155,9 @@ func disallowInterruptionsAux(body: NimNode) =
 macro disallowInterruptions(body: untyped) =
   disallowInterruptionsAux(body)
 
-template withStateForBlockSlotId*(nodeParam: BeaconNode,
-                                  blockSlotIdParam: BlockSlotId,
-                                  body: untyped): untyped =
-
+template withStateForBlockSlotId*(
+    nodeParam: BeaconNode, blockSlotIdParam: BlockSlotId, body: untyped
+): untyped =
   block:
     let
       node = nodeParam
@@ -177,28 +185,38 @@ template withStateForBlockSlotId*(nodeParam: BeaconNode,
     # TODO view-types
     # Avoid the code bloat produced by the double `body` reference through a lent var
     if isState(node.dag.headState):
-      template state: untyped {.inject, used.} = node.dag.headState
-      template stateRoot: untyped {.inject, used.} =
+      template state(): untyped {.inject, used.} =
+        node.dag.headState
+
+      template stateRoot(): untyped {.inject, used.} =
         getStateRoot(node.dag.headState)
+
       body
     else:
-      let cachedState = if node.stateTtlCache != nil:
-        node.stateTtlCache.getClosestState(node.dag, blockSlotId)
-      else:
-        nil
+      let
+        cachedState =
+          if node.stateTtlCache != nil:
+            node.stateTtlCache.getClosestState(node.dag, blockSlotId)
+          else:
+            nil
 
-      let stateToAdvance = if cachedState != nil:
-        cachedState
-      else:
-        assignClone(node.dag.headState)
+      let
+        stateToAdvance =
+          if cachedState != nil:
+            cachedState
+          else:
+            assignClone(node.dag.headState)
 
       if node.dag.updateState(stateToAdvance[], blockSlotId, false, cache):
         if cachedState == nil and node.stateTtlCache != nil:
           # This was not a cached state, we can cache it now
           node.stateTtlCache.add(stateToAdvance)
 
-        template state: untyped {.inject, used.} = stateToAdvance[]
-        template stateRoot: untyped {.inject, used.} = getStateRoot(stateToAdvance[])
+        template state(): untyped {.inject, used.} =
+          stateToAdvance[]
+
+        template stateRoot(): untyped {.inject, used.} =
+          getStateRoot(stateToAdvance[])
 
         body
 
@@ -206,9 +224,9 @@ template strData*(body: ContentBody): string =
   bind fromBytes
   string.fromBytes(body.data)
 
-func syncCommitteeParticipants*(forkedState: ForkedHashedBeaconState,
-                                epoch: Epoch
-                               ): Result[seq[ValidatorPubKey], cstring] =
+func syncCommitteeParticipants*(
+    forkedState: ForkedHashedBeaconState, epoch: Epoch
+): Result[seq[ValidatorPubKey], cstring] =
   withState(forkedState):
     when consensusFork >= ConsensusFork.Altair:
       let
@@ -223,23 +241,25 @@ func syncCommitteeParticipants*(forkedState: ForkedHashedBeaconState,
     else:
       err("State's fork do not support sync committees")
 
-func keysToIndices*(cacheTable: var Table[ValidatorPubKey, ValidatorIndex],
-                    forkedState: ForkedHashedBeaconState,
-                    keys: openArray[ValidatorPubKey]
-                   ): seq[Opt[ValidatorIndex]] =
+func keysToIndices*(
+    cacheTable: var Table[ValidatorPubKey, ValidatorIndex],
+    forkedState: ForkedHashedBeaconState,
+    keys: openArray[ValidatorPubKey],
+): seq[Opt[ValidatorIndex]] =
   var indices = newSeq[Opt[ValidatorIndex]](len(keys))
   let totalValidatorsInState = getStateField(forkedState, validators).lenu64
-  var keyset =
-    block:
-      var res: Table[ValidatorPubKey, int]
-      for inputIndex, pubkey in keys:
-        # Try to search in cache first.
-        cacheTable.withValue(pubkey, vindex):
-          if uint64(vindex[]) < totalValidatorsInState:
-            indices[inputIndex] = Opt.some(vindex[])
-        do:
-          res[pubkey] = inputIndex
-      res
+  var
+    keyset =
+      block:
+        var res: Table[ValidatorPubKey, int]
+        for inputIndex, pubkey in keys:
+          # Try to search in cache first.
+          cacheTable.withValue(pubkey, vindex):
+            if uint64(vindex[]) < totalValidatorsInState:
+              indices[inputIndex] = Opt.some(vindex[])
+          do:
+            res[pubkey] = inputIndex
+        res
   if len(keyset) > 0:
     for validatorIndex, validator in getStateField(forkedState, validators):
       keyset.withValue(validator.pubkey, listIndex):
@@ -255,9 +275,9 @@ proc getBidOptimistic*(node: BeaconNode, bid: BlockId): Opt[bool] =
   else:
     Opt.none(bool)
 
-proc getShufflingOptimistic*(node: BeaconNode,
-                             dependentSlot: Slot,
-                             dependentRoot: Eth2Digest): Opt[bool] =
+proc getShufflingOptimistic*(
+    node: BeaconNode, dependentSlot: Slot, dependentRoot: Eth2Digest
+): Opt[bool] =
   if node.currentSlot().epoch() >= node.dag.cfg.BELLATRIX_FORK_EPOCH:
     # `slot` in this `BlockId` may be higher than block's actual slot,
     # this is alright for the purpose of calling `is_optimistic`.
@@ -266,21 +286,23 @@ proc getShufflingOptimistic*(node: BeaconNode,
   else:
     Opt.none(bool)
 
-proc getStateOptimistic*(node: BeaconNode,
-                         state: ForkedHashedBeaconState): Opt[bool] =
+proc getStateOptimistic*(node: BeaconNode, state: ForkedHashedBeaconState): Opt[bool] =
   if node.currentSlot().epoch() >= node.dag.cfg.BELLATRIX_FORK_EPOCH:
     if state.kind >= ConsensusFork.Bellatrix:
       # A state is optimistic iff the block which created it is
-      let stateBid = withState(state): forkyState.latest_block_id
+      let
+        stateBid =
+          withState(state):
+            forkyState.latest_block_id
       Opt.some(node.dag.is_optimistic(stateBid))
     else:
       Opt.some(false)
   else:
     Opt.none(bool)
 
-proc getBlockOptimistic*(node: BeaconNode,
-                         blck: ForkedTrustedSignedBeaconBlock |
-                               ForkedSignedBeaconBlock): Opt[bool] =
+proc getBlockOptimistic*(
+    node: BeaconNode, blck: ForkedTrustedSignedBeaconBlock | ForkedSignedBeaconBlock
+): Opt[bool] =
   if node.currentSlot().epoch() >= node.dag.cfg.BELLATRIX_FORK_EPOCH:
     if blck.kind >= ConsensusFork.Bellatrix:
       Opt.some(node.dag.is_optimistic(blck.toBlockId()))
@@ -295,11 +317,16 @@ const
   textEventStreamMediaType* = MediaType.init("text/event-stream")
 
 proc verifyRandao*(
-    node: BeaconNode, slot: Slot, proposer: ValidatorIndex,
-    randao: ValidatorSig, skip_randao_verification: bool): bool =
+    node: BeaconNode,
+    slot: Slot,
+    proposer: ValidatorIndex,
+    randao: ValidatorSig,
+    skip_randao_verification: bool,
+): bool =
   let
-    proposer_pubkey = node.dag.validatorKey(proposer).valueOr:
-      return false
+    proposer_pubkey =
+      node.dag.validatorKey(proposer).valueOr:
+        return false
 
   if skip_randao_verification:
     randao == ValidatorSig.infinity()
@@ -309,4 +336,5 @@ proc verifyRandao*(
       genesis_validators_root = node.dag.genesis_validators_root
 
     verify_epoch_signature(
-      fork, genesis_validators_root, slot.epoch, proposer_pubkey, randao)
+      fork, genesis_validators_root, slot.epoch, proposer_pubkey, randao
+    )

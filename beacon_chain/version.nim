@@ -12,7 +12,7 @@
 import std/[strutils, compilesettings]
 
 const
-  compileYear = CompileDate[0 ..< 4]  # YYYY-MM-DD (UTC)
+  compileYear = CompileDate[0..<4] # YYYY-MM-DD (UTC)
   copyrights* =
     "Copyright (c) 2019-" & compileYear & " Status Research & Development GmbH"
 
@@ -35,18 +35,18 @@ const
     else:
       ""
 
-  gitRevisionLong* = when git_revision_override.len == 0:
-    staticExec "git rev-parse --short HEAD"
-  else:
-    git_revision_override
+  gitRevisionLong* =
+    when git_revision_override.len == 0:
+      staticExec "git rev-parse --short HEAD"
+    else:
+      git_revision_override
 
   gitRevision* = strip(gitRevisionLong)[0..5]
 
   nimFullBanner* = staticExec("nim --version")
   nimBanner* = staticExec("nim --version | grep Version")
 
-  versionAsStr* =
-    $versionMajor & "." & $versionMinor & "." & $versionBuild
+  versionAsStr* = $versionMajor & "." & $versionMinor & "." & $versionBuild
 
   fullVersionStr* = "v" & versionAsStr & "-" & gitRevision & "-" & versionBlob
 
